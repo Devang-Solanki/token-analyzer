@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { SiteFooter, SiteHeader } from '@/components/SiteChrome';
 import { PROVIDERS } from '@/providers';
+import { docsHref, docsPane } from '@/lib/routes';
 import type { Provider } from '@/providers';
 
 /** Prose sections, kept alongside the provider sections in one nav. */
@@ -13,21 +14,83 @@ const TOPICS = [
 
 type PaneId = string;
 
+const SITE = 'https://token.devanghacks.in';
+
 function currentPane(): PaneId {
-  const hash = window.location.hash.replace(/^#/, '');
-  if (!hash) return 'overview';
-  const known =
-    TOPICS.some((topic) => topic.id === hash) || PROVIDERS.some((p) => p.id === hash);
-  return known ? hash : 'overview';
+  return docsPane(
+    window.location.pathname,
+    (slug) => TOPICS.some((t) => t.id === slug) || PROVIDERS.some((p) => p.id === slug)
+  );
+}
+
+function paneMeta(pane: PaneId): { title: string; description: string } {
+  const provider = PROVIDERS.find((p) => p.id === pane);
+  if (provider) {
+    return {
+      title: `How Token Analyzer reads a ${provider.name} token`,
+      description: `${provider.docs.summary} Every request it makes, and what ${provider.name} will not tell you.`,
+    };
+  }
+  if (pane === 'browser') {
+    return {
+      title: 'Why Token Analyzer runs in your browser',
+      description:
+        'A token is a live credential, so the page asks the provider directly and nothing reaches a server of ours. That also decides which services can be supported at all.',
+    };
+  }
+  if (pane === 'contribute') {
+    return {
+      title: 'Adding a provider to Token Analyzer',
+      description:
+        'A provider is one file: recognise the token format, call the service, return the common report shape. Check the service permits a browser request first.',
+    };
+  }
+  return {
+    title: 'How Token Analyzer reads HuggingFace, GitHub and GitLab tokens',
+    description:
+      'Which endpoints each provider is asked, how a verdict is reached, and what each one will not tell you about a token.',
+  };
+}
+
+/** Keeps the head in step with the pane, and gives the pre-render its source. */
+function useDocumentMeta(pane: PaneId) {
+  useEffect(() => {
+    const { title, description } = paneMeta(pane);
+    document.title = `${title} — Token Analyzer`;
+
+    const set = (selector: string, attr: string, value: string) => {
+      document.querySelector(selector)?.setAttribute(attr, value);
+    };
+    set('meta[name="description"]', 'content', description);
+    set('meta[property="og:description"]', 'content', description);
+    set('meta[property="og:title"]', 'content', title);
+    set('link[rel="canonical"]', 'href', SITE + docsHref(pane));
+    set('meta[property="og:url"]', 'content', SITE + docsHref(pane));
+
+    const schema = document.getElementById('page-schema');
+    if (schema) {
+      schema.textContent = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'TechArticle',
+        headline: title,
+        description,
+        url: SITE + docsHref(pane),
+        inLanguage: 'en',
+        isPartOf: { '@type': 'WebSite', name: 'Token Analyzer', url: SITE + '/' },
+        author: { '@type': 'Person', name: 'Devang Solanki', url: 'https://devanghacks.in' },
+      });
+    }
+  }, [pane]);
 }
 
 export function DocsApp() {
   const [pane, setPane] = useState<PaneId>(currentPane);
+  useDocumentMeta(pane);
 
   useEffect(() => {
     const sync = () => setPane(currentPane());
-    window.addEventListener('hashchange', sync);
-    return () => window.removeEventListener('hashchange', sync);
+    window.addEventListener('popstate', sync);
+    return () => window.removeEventListener('popstate', sync);
   }, []);
 
   const provider = PROVIDERS.find((p) => p.id === pane);
@@ -79,7 +142,7 @@ function NavGroup({
           return (
             <li key={item.id}>
               <a
-                href={`#${item.id}`}
+                href={docsHref(item.id)}
                 aria-current={active ? 'page' : undefined}
                 className={`block px-3 py-2 text-[0.8125rem] transition-colors ${
                   active
@@ -211,7 +274,7 @@ function TopicPane({ id }: { id: string }) {
       <ul className="mt-2.5 grid gap-px sm:grid-cols-2">
         {PROVIDERS.map((provider) => (
           <li key={provider.id} className="bg-card p-4">
-            <a href={`#${provider.id}`} className="display font-medium text-accent-text">
+            <a href={docsHref(provider.id)} className="display font-medium text-accent-text">
               {provider.name}
             </a>
             <div className="mt-2 flex flex-wrap gap-1.5">

@@ -17,11 +17,23 @@ const root = path.resolve(__dirname)
 function directoryIndex(base: string): Connect.NextHandleFunction {
   return (req, _res, next) => {
     const [pathname, query] = (req.url ?? '/').split('?')
-    if (pathname.endsWith('/') || path.extname(pathname)) return next()
+    const suffix = query ? `?${query}` : ''
+    if (path.extname(pathname)) return next()
 
+    // A directory with its own index.html, the way a static host resolves it.
     const candidate = path.join(base, pathname, 'index.html')
     if (candidate.startsWith(base) && existsSync(candidate)) {
-      req.url = `${pathname}/index.html${query ? `?${query}` : ''}`
+      req.url = `${pathname.replace(/\/$/, '')}/index.html${suffix}`
+      return next()
+    }
+
+    // The docs panes are real paths with no file of their own until the
+    // pre-render step writes them, so in dev they all load the docs entry.
+    // This has to cover the trailing-slash form too: that is what every link
+    // uses, and without it the request falls through to the root index.html
+    // and silently serves the analyzer.
+    if (pathname === '/docs' || pathname.startsWith('/docs/')) {
+      req.url = `/docs/index.html${suffix}`
     }
     next()
   }

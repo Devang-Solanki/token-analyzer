@@ -1,3 +1,4 @@
-# Cloudflare Pages serves /docs/index.html for /docs, but state it rather than
-# rely on it. Leaves every other path alone, so 404.html still handles misses.
+# Cloudflare Pages serves the directory index, but state it rather than rely
+# on it. Leaves every other path alone, so 404.html still handles misses.
 /docs /docs/ 301
+/docs/:pane /docs/:pane/ 301

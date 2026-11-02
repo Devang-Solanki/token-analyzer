@@ -56,8 +56,23 @@ There are two HTML entries, so `/docs` is a real path rather than a hash route. 
 preview servers otherwise rewrite any unmatched path to the root `index.html`, which makes
 `/docs` silently serve the homepage - the `directory-index` plugin in
 [`vite.config.ts`](vite.config.ts) resolves extensionless paths to their directory index the way
-a static host does. In production [`public/_redirects`](public/_redirects) states the same thing
-for Cloudflare Pages rather than relying on its default.
+a static host does, and sends everything under `/docs/` to the docs entry. In production
+[`public/_redirects`](public/_redirects) handles the trailing slash.
+
+`npm run build` finishes by pre-rendering. Both entries otherwise ship an empty
+`<div id="root">`, so anything that does not execute JavaScript - and that includes Google's
+first pass - sees a blank page, and the docs panes have no HTML at all.
+[`scripts/prerender.mjs`](scripts/prerender.mjs) loads each route in a headless browser,
+snapshots the rendered document and writes it back into `dist`, then emits `sitemap.xml` from the
+same route list so the two cannot drift. The route list comes from the provider registry, so a
+new provider gets a pre-rendered, indexed page for free. It refuses to write a route whose
+render contains no `<h1>`, and skips with a warning if no browser is available rather than
+publishing empty shells silently. Set `CHROME_PATH` if it cannot find one.
+
+```bash
+npm test          # 105 assertions over the provider logic
+npm run prerender # re-run just the pre-render against an existing dist
+```
 
 ### Building for Production
 
@@ -136,6 +151,11 @@ docs/index.html            # the documentation
 
 assets/
 └── og-template.html       # renders to public/og.png; see the comment at its top
+
+scripts/
+├── prerender.mjs          # post-build: real HTML per route, plus sitemap.xml
+├── provider-ids.mjs       # feeds the route list from the provider registry
+└── test-providers.mjs     # npm test
 
 public/
 ├── 404.html               # copied from devanghacks.in, self-contained

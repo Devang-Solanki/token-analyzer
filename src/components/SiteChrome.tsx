@@ -1,3 +1,4 @@
+import { DOCS_ROOT } from '@/lib/routes';
 import { useTheme } from '@/lib/theme';
 
 /** The day/night switch from devanghacks.in. `checked` is night. */
@@ -48,7 +49,7 @@ export function SiteHeader({ docsActive = false }: { docsActive?: boolean }) {
             </span>
           </a>
           <a
-            href="/docs/"
+            href={DOCS_ROOT}
             aria-current={docsActive ? 'page' : undefined}
             className={`text-[0.75rem] font-semibold uppercase tracking-[0.1em] ${
               docsActive ? 'text-foreground' : 'text-muted-foreground hover:text-accent-text'
@@ -79,7 +80,7 @@ export function SiteFooter() {
           with it.
         </p>
         <p className="mt-2">
-          <a href="/docs/" className="link">
+          <a href={DOCS_ROOT} className="link">
             How this reads a token
           </a>{' '}
           &middot; Built for the security community.{' '}

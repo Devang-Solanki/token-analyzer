@@ -17,6 +17,7 @@ import type {
   TokenReport,
 } from '@/providers';
 import { formatDate, timeUntil } from '@/lib/time';
+import { docsHref } from '@/lib/routes';
 import {
   AlertTriangle,
   Box,
@@ -365,7 +366,7 @@ function App() {
                       ))}
                     </div>
                     <a
-                      href={`/docs/#${provider.id}`}
+                      href={docsHref(provider.id)}
                       className="mt-auto pt-4 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground hover:text-accent-text"
                     >
                       What it reads <span aria-hidden="true">&#8594;</span>
@@ -743,7 +744,7 @@ function FindingRow({ finding }: { finding: Finding }) {
 function SectionHead({ title, note }: { title: string; note?: string }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-      <h3 className="display text-[1.0625rem] font-medium tracking-[-0.01em]">{title}</h3>
+      <h2 className="display text-[1.0625rem] font-medium tracking-[-0.01em]">{title}</h2>
       {note && <p className="data-label">{note}</p>}
     </div>
   );
